@@ -2,8 +2,8 @@
 require File.expand_path('../lib/pebbles-cors/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Bjørge Næss"]
-  gem.email         = ["bjoerge@origo.no"]
+  gem.authors       = ["Bjoerge Naess"]
+  gem.email         = ["bjoerge@bengler.no"]
   gem.description   = %q{Rack middleware for CORS handling in Pebbles}
   gem.summary       = %q{Rack middleware for CORS handling in Pebbles}
   gem.homepage      = ""

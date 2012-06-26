@@ -6,10 +6,6 @@ describe Pebbles::Cors do
   include Rack::Test::Methods
 
   describe "Request handling" do
-    let(:domain_response) {
-      DeepStruct.wrap({:body => {:domain => {:realm => "some-realm"}}})
-    }
-
     let(:realm_response) {
       DeepStruct.wrap({:body => {:realm => {:label => "some-realm", :domains => ["client-domain.com", "another-domain.net"]}}})
     }
@@ -33,7 +29,6 @@ describe Pebbles::Cors do
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                           'HTTP_ORIGIN' => "http://client-domain.com"
 
-      Pebblebed::Http.should_receive(:get).once.and_return domain_response
       Pebblebed::Http.should_receive(:get).once.and_return realm_response
 
       status, headers, body = Pebbles::Cors.new(app).call(request)
@@ -73,7 +68,6 @@ describe Pebbles::Cors do
                                           'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
-      Pebblebed::Http.should_receive(:get).once.and_return domain_response
       Pebblebed::Http.should_receive(:get).once.and_return realm_response
 
       Pebbles::Cors.new(app).call(request)

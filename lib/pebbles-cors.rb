@@ -36,19 +36,14 @@ module Pebbles
 
     private
 
-    # Fetch and return the list of trusted domains for a given host
+    # Get the list of trusted domains for a given host/domain
     def trusted_domains_for(host)
 
-      checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
-
-      # Find realm of host
-      realm = $memcached.fetch("realm_of_domain_#{host}", 60*15) do
-        checkpoint.get("/domains/#{host}").domain.realm
+      $memcached.fetch("trusted_domains_for_#{host}", 60*15) do
+        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']        
+        checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
       end
 
-      $memcached.fetch("domains_for_realm_#{realm}", 60*15) do
-        checkpoint.get("/realms/#{realm}").realm.domains.unwrap
-      end
     end
   end
 

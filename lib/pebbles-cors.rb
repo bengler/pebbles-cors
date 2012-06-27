@@ -54,8 +54,7 @@ module Pebbles
     # An `origin` is a combination of scheme, host and port, no path data or query string will be provided
     # https://wiki.mozilla.org/Security/Origin#Origin_header_format
     def origin
-      @origin ||= env['HTTP_ORIGIN']
-      @origin ||= env['HTTP_X_ORIGIN']
+      env['HTTP_ORIGIN'] || env['HTTP_X_ORIGIN']
     end
 
     # The host part of the origin header

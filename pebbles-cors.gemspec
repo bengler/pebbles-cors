@@ -19,6 +19,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "simplecov"
   gem.add_development_dependency "rack-test"
 
+  gem.add_runtime_dependency "dalli"
   gem.add_runtime_dependency "rack"
   gem.add_runtime_dependency "pebblebed"
 end

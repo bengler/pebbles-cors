@@ -1,5 +1,6 @@
 require "pebbles-cors/version"
 require "pebblebed"
+require "dalli"
 
 module Pebbles
   class Cors
@@ -36,10 +37,14 @@ module Pebbles
 
     private
 
+    def memcached
+      @memcached ||= ($memcached || Dalli::Client.new)
+    end
+
     # Get the list of trusted domains for a given host/domain
     def trusted_domains_for(host)
 
-      $memcached.fetch("trusted_domains_for_#{host}", 60*15) do
+      memcached.fetch("trusted_domains_for_#{host}", 60*15) do
         checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']        
         checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
       end

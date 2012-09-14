@@ -4,15 +4,16 @@ require "dalli"
 
 module Pebbles
   class Cors
-    def initialize(app)
+    def initialize(app, &blk)
       @app = app
+      @trusted_domain_fetcher = blk
     end
 
     def call(env)
 
       request = CorsRequest.new(env)
 
-      unless request.cors? and trusted_domains_for(request.host).include?(request.origin_host)
+      unless request.cors? and cached_get_trusted_domains_for(request.host).include?(request.origin_host)
         return @app.call(env)
       end
 
@@ -41,14 +42,20 @@ module Pebbles
       @memcached ||= ($memcached || Dalli::Client.new)
     end
 
-    # Get the list of trusted domains for a given host/domain
-    def trusted_domains_for(host)
-
-      memcached.fetch("trusted_domains_for_#{host}", 60*15) do
-        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']        
+    def get_trusted_domains_for(host)
+      if @trusted_domain_fetcher
+        @trusted_domain_fetcher.call(host)
+      else
+        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
         checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
       end
+    end
 
+    # Get the list of trusted domains for a given host/domain
+    def cached_get_trusted_domains_for(host)
+      memcached.fetch("trusted_domains_for_#{host}", 60*15) do
+        get_trusted_domains_for(host)
+      end
     end
   end
 

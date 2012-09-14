@@ -1,13 +1,21 @@
 require 'spec_helper'
 require "rack/test"
 require "pebbles-cors"
+require "ostruct"
 
 describe Pebbles::Cors do
   include Rack::Test::Methods
 
   describe "Request handling" do
     let(:realm_response) {
-      DeepStruct.wrap({:body => {:realm => {:label => "some-realm", :domains => ["client-domain.com", "another-domain.net"]}}})
+      OpenStruct.new({
+                       body: {
+                         realm: {
+                           label: "some-realm",
+                           domains: ["client-domain.com", "another-domain.net"]
+                         }
+                       }.to_json
+                     })
     }
 
     before(:each) do
@@ -79,6 +87,24 @@ describe Pebbles::Cors do
       headers['Access-Control-Allow-Methods'].should eq request_methods
       headers['Access-Control-Allow-Headers'].should eq request_headers
       body.should be_empty
+    end
+
+    it 'takes an optional block that resolves the list of trusted domains for a domain' do
+
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                          'HTTP_ORIGIN' => "http://client-domain.com"
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      m = Pebbles::Cors.new(app) do
+        ['client-domain.com']
+      end
+
+      status, headers, body = m.call(request)
+      headers['Access-Control-Allow-Origin'].should eq "http://client-domain.com"
+      body.should eq protected_data
     end
   end
 end

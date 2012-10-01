@@ -106,5 +106,23 @@ describe Pebbles::Cors do
       headers['Access-Control-Allow-Origin'].should eq "http://client-domain.com"
       body.should eq protected_data
     end
+
+    it 'always allows request from localhost' do
+
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                          'HTTP_ORIGIN' => "http://localhost:8080" # port doesn't matter
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      m = Pebbles::Cors.new(app) do
+        ['client-domain.com']
+      end
+
+      status, headers, body = m.call(request)
+      headers['Access-Control-Allow-Origin'].should eq "http://localhost:8080"
+      body.should eq protected_data
+    end
   end
 end

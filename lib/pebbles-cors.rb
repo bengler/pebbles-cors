@@ -9,13 +9,25 @@ module Pebbles
       @trusted_domain_fetcher = blk
     end
 
+    # Check whether the incoming request should be classified as a cors request
+    # and have Access-Control-* response headers set
+    def apply_cors_headers?(request)
+
+       # No origin header set. Its just a a regular request.
+      return false unless request.cors?
+
+      # always apply cors-headers to requests coming from localhost
+      return true if request.origin_host == 'localhost'
+
+      # The given origin is in our list of trusted domains
+      return true if cached_get_trusted_domains_for(request.host).include?(request.origin_host)
+    end
+
     def call(env)
 
       request = CorsRequest.new(env)
 
-      unless request.cors? and cached_get_trusted_domains_for(request.host).include?(request.origin_host)
-        return @app.call(env)
-      end
+      return @app.call(env) unless apply_cors_headers?(request)
 
       cors_headers = {
         'Access-Control-Allow-Origin' => request.origin,
@@ -29,7 +41,8 @@ module Pebbles
         cors_headers['Access-Control-Allow-Headers'] = request.request_headers if request.request_headers
         cors_headers['Access-Control-Allow-Methods'] = request.request_methods if request.request_methods
 
-        [200, cors_headers, []] # Always return empty body when preflighting
+        # Always return empty body when responding to preflighted requests
+        [200, cors_headers, []]
       else
         status, headers, body = @app.call(env)
         [status, cors_headers.merge(headers), body]
@@ -69,7 +82,7 @@ module Pebbles
       env['HTTP_ORIGIN'] || env['HTTP_X_ORIGIN']
     end
 
-    # The host part of the origin header
+    # The host part of the origin header (excluding port)
     def origin_host
       URI.parse(origin).host
     end

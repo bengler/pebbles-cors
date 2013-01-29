@@ -20,7 +20,9 @@ module Pebbles
       return true if request.origin_host == 'localhost'
 
       # The given origin is in our list of trusted domains
-      return true if cached_get_trusted_domains_for(request.host).include?(request.origin_host)
+      return true if cached_get_trusted_domains_for(request.host).any? {|trusted_domain|
+        request.origin_host.end_with? trusted_domain
+      }
     end
 
     def call(env)

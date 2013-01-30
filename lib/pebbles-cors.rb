@@ -9,40 +9,36 @@ module Pebbles
       @trusted_domain_fetcher = blk
     end
 
-    # Check whether the incoming request should be classified as a cors request
-    # and have Access-Control-* response headers set
-    def apply_cors_headers?(request)
-
-       # No origin header set. Its just a a regular request.
-      return false unless request.cors?
-
+    def trusted_origin?(request)
       # always apply cors-headers to requests coming from localhost
       return true if request.origin_host == 'localhost'
 
-      # The given origin is in our list of trusted domains
-      return true if cached_get_trusted_domains_for(request.host).any? {|trusted_domain|
+      # Check if the given origin host is in our list of trusted domains (or a subdomain of a trusted domain)
+      cached_get_trusted_domains_for(request.host).any? {|trusted_domain|
         request.origin_host.end_with? trusted_domain
       }
     end
 
     def call(env)
-
       request = CorsRequest.new(env)
 
-      return @app.call(env) unless apply_cors_headers?(request)
+      return @app.call(env) unless request.cors?
 
-      cors_headers = {
-        'Access-Control-Allow-Origin' => request.origin,
-        'Access-Control-Expose-Headers' => "",
-        'Access-Control-Allow-Credentials' => 'true'
-      }
+      allowed = trusted_origin?(request)
 
+      cors_headers = {}
+      if allowed
+        cors_headers['Access-Control-Allow-Origin'] = request.origin
+        cors_headers['Access-Control-Expose-Headers'] = ""
+        cors_headers['Access-Control-Allow-Credentials'] = 'true'
+      end
       if request.preflight?
-        cors_headers['Content-Type'] = 'text/plain'
-        cors_headers['Access-Control-Max-Age'] = (60*60).to_s # Tell the browser it can cache the result for this long (in seconds)
-        cors_headers['Access-Control-Allow-Headers'] = request.request_headers if request.request_headers
-        cors_headers['Access-Control-Allow-Methods'] = request.request_methods if request.request_methods
-
+        if allowed
+          cors_headers['Content-Type'] = 'text/plain'
+          cors_headers['Access-Control-Max-Age'] = (60*60).to_s # Tell the browser it can cache the result for this long (in seconds)
+          cors_headers['Access-Control-Allow-Headers'] = request.request_headers if request.request_headers
+          cors_headers['Access-Control-Allow-Methods'] = request.request_methods if request.request_methods
+        end
         # Always return empty body when responding to preflighted requests
         [200, cors_headers, []]
       else
@@ -62,7 +58,11 @@ module Pebbles
         @trusted_domain_fetcher.call(host)
       else
         checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
-        checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
+        begin
+          checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
+        rescue Exception
+          []
+        end
       end
     end
 

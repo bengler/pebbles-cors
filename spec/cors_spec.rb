@@ -62,6 +62,28 @@ describe Pebbles::Cors do
       body.should eq protected_data
     end
 
+    it 'Will not trust an origin if checkpoint returns an error' do
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                            'HTTP_ORIGIN' => "http://client-domain.com"
+
+      Pebblebed::Http.should_receive(:get).once.and_raise
+
+      status, headers, body = Pebbles::Cors.new(app).call(request)
+
+      headers.should_not include 'Access-Control-Allow-Credentials'
+      headers.should_not include 'Access-Control-Max-Age'
+      headers.should_not include 'Access-Control-Allow-Methods'
+      headers.should_not include 'Access-Control-Allow-Headers'
+
+      # This is expected. The browser will protect the data for us
+      body.should eq protected_data
+    end
+
     it 'Handles a preflight request' do
 
       app = lambda do |env|
@@ -78,7 +100,8 @@ describe Pebbles::Cors do
 
       Pebblebed::Http.should_receive(:get).once.and_return realm_response
 
-      Pebbles::Cors.new(app).call(request)
+      # Will not call the app on preflighted requests (as it would most likely give 404 anyways)
+      app.should_not_receive :call
 
       status, headers, body = Pebbles::Cors.new(app).call(request)
 
@@ -86,6 +109,33 @@ describe Pebbles::Cors do
       headers.should include 'Access-Control-Max-Age'
       headers['Access-Control-Allow-Methods'].should eq request_methods
       headers['Access-Control-Allow-Headers'].should eq request_headers
+      body.should be_empty
+    end
+
+    it 'It will not redirect the request to the app if its a preflight from a denied origin' do
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      request_methods = "POST, PUT, DELETE"
+      request_headers = "X-Some-Header"
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                          :method => "OPTIONS",
+                                          'HTTP_ORIGIN' => "http://disallowed-domain.com",
+                                          'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
+                                          'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
+
+      Pebblebed::Http.should_receive(:get).once.and_return realm_response
+
+      app.should_not_receive :call
+
+      status, headers, body = Pebbles::Cors.new(app).call(request)
+
+      headers.should_not include 'Access-Control-Allow-Credentials'
+      headers.should_not include 'Access-Control-Max-Age'
+      headers.should_not include 'Access-Control-Allow-Methods'
+      headers.should_not include 'Access-Control-Allow-Headers'
       body.should be_empty
     end
 

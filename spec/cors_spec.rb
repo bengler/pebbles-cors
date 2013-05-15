@@ -7,17 +7,20 @@ describe Pebbles::Cors do
   include Rack::Test::Methods
 
   describe "Request handling" do
-    let(:realm_response) {
+    let(:trusted_response) {
       OpenStruct.new({
                        body: {
-                         realm: {
-                           label: "some-realm",
-                           domains: ["client-domain.com", "another-domain.net"]
-                         }
+                         allowed: true
                        }.to_json
                      })
     }
-
+    let(:distrusted_response) {
+      OpenStruct.new({
+                       body: {
+                         allowed: false
+                       }.to_json
+                     })
+    }
     before(:each) do
       Pebblebed.config do
         host "checkpoint.dev"
@@ -37,7 +40,7 @@ describe Pebbles::Cors do
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                           'HTTP_ORIGIN' => "http://client-domain.com"
 
-      Pebblebed::Http.should_receive(:get).once.and_return realm_response
+      Pebblebed::Http.should_receive(:get).once.and_return trusted_response
 
       status, headers, body = Pebbles::Cors.new(app).call(request)
 
@@ -98,7 +101,7 @@ describe Pebbles::Cors do
                                           'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
-      Pebblebed::Http.should_receive(:get).once.and_return realm_response
+      Pebblebed::Http.should_receive(:get).once.and_return trusted_response
 
       # Will not call the app on preflighted requests (as it would most likely give 404 anyways)
       app.should_not_receive :call
@@ -126,7 +129,7 @@ describe Pebbles::Cors do
                                           'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
-      Pebblebed::Http.should_receive(:get).once.and_return realm_response
+      Pebblebed::Http.should_receive(:get).once.and_return distrusted_response
 
       app.should_not_receive :call
 
@@ -149,7 +152,7 @@ describe Pebbles::Cors do
       end
 
       m = Pebbles::Cors.new(app) do
-        ['client-domain.com']
+        ['http://client-domain.com']
       end
 
       status, headers, body = m.call(request)

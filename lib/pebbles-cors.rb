@@ -61,7 +61,7 @@ module Pebbles
       else
         begin
           checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
-          checkpoint.get("/domains/#{host}/trusts/#{origin_host}").allowed == true
+          checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
         rescue Exception
           false
         end

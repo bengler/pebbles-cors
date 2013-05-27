@@ -4,19 +4,21 @@ require "dalli"
 
 module Pebbles
   class Cors
+
+    attr_accessor :cache_ttl
+
     def initialize(app, &blk)
       @app = app
       @trusted_domain_fetcher = blk
+      @cache_ttl = 60*15 # in seconds
     end
 
     def trusted_origin?(request)
       # always apply cors-headers to requests coming from localhost
       return true if request.origin_host == 'localhost'
 
-      # Check if the given origin host is in our list of trusted domains (or a subdomain of a trusted domain)
-      cached_get_trusted_domains_for(request.host).any? {|trusted_domain|
-        request.origin_host.end_with? trusted_domain
-      }
+      # Check if the given origin host is allowed to do the request (or a subdomain of a trusted domain)
+      cached_host_trusts_origin_host?(request.host, request.origin_host)
     end
 
     def call(env)
@@ -53,25 +55,25 @@ module Pebbles
       @memcached ||= ($memcached || Dalli::Client.new)
     end
 
-    def get_trusted_domains_for(host)
+    def host_trusts_origin_host?(host, origin_host)
       if @trusted_domain_fetcher
-        @trusted_domain_fetcher.call(host)
+        @trusted_domain_fetcher.call(host, origin_host)
       else
-        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
         begin
-          checkpoint.get("/domains/#{host}/realm").realm.domains.unwrap
+          checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
+          checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
         rescue Exception
-          []
+          false
         end
       end
     end
 
-    # Get the list of trusted domains for a given host/domain
-    def cached_get_trusted_domains_for(host)
-      memcached.fetch("trusted_domains_for_#{host}", 60*15) do
-        get_trusted_domains_for(host)
+    def cached_host_trusts_origin_host?(host, origin_host)
+      memcached.fetch("#{host}_trusts_#{origin_host}", cache_ttl) do
+        host_trusts_origin_host?(host, origin_host)
       end
     end
+
   end
 
   private

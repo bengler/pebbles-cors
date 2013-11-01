@@ -42,13 +42,12 @@ end
 
 ### Origin is in the list of trusted domains
 
-    curl -I -H "Origin:http://trusted-domain.com" http://pebbles.com/api/pebbelicious/v1/meat/me?session=some-session-id
+    curl -I -H "Origin:http://trusted-domain.com" http://pebbles.com/api/pebbelicious/v1/meat/43
 
     HTTP/1.1 200 OK
-    Date: Tue, 26 Jun 2012 13:47:11 GMT
     Content-Type: application/json;charset=utf-8
-    Connection: keep-alive
-    Access-Control-Allow-Origin: http://xdparlor.dev
+    Status: 200 OK
+    Access-Control-Allow-Origin: http://trusted-domain.com
     Access-Control-Expose-Headers: 
     Access-Control-Allow-Credentials: true
 
@@ -56,26 +55,24 @@ end
 
 ### Preflight request
 
-    curl -I -X OPTIONS -H "Origin:http://trusted-domain.dev" http://pebbles.com/api/pebbelicious/v1/meat/me?session=some-session-id
+    curl -I -X OPTIONS -H "Origin:http://trusted-domain.com" http://pebbles.com/api/pebbelicious/v1/meat/43
 
     HTTP/1.1 200 OK
-    Date: Tue, 26 Jun 2012 14:19:30 GMT
     Content-Type: text/plain; charset=utf-8
     Status: 200 OK
-    Access-Control-Allow-Origin: http://xdparlor.dev
+    Access-Control-Allow-Origin: http://trusted-domain.com
     Access-Control-Expose-Headers: 
     Access-Control-Allow-Credentials: true
     Access-Control-Max-Age: 3600    
 
 ### Request from Evil Domain™ where the origin is *not* in list of trusted domains
 
-    curl -I -H "Origin:http://evil-domain.com" http://pebbles.com/api/pebbelicious/v1/meat/me?session=some-session-id
+    curl -I -H "Origin:http://evil-domain.com" http://pebbles.com/api/pebbelicious/v1/meat/43
 
     HTTP/1.1 200 OK
-    Date: Tue, 26 Jun 2012 14:04:41 GMT
     Content-Type: application/json;charset=utf-8
     Status: 200 OK
 
     {"chunky":"bacon"}
 
-Note: The response body is still exposed. This is effectively the same as issuing the same request without the Origin header.
+Note: The server will processes the request as usual, the only difference is the lack of `Access-Control-*` headers and is effectively the same as issuing the same request *without* the Origin header. It is now up to the browser to abort the request coming from this untrusted domain.

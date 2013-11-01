@@ -8,6 +8,11 @@ is in the list of domains belonging to the realm of the specified origin (i.e. i
 If the given origin is not in the list of _trusted domains_, *no* CORS response headers will be set and the request is
 processed normally.
 
+## Requirements
+
+Pebbles::Cors uses memcached to store the list of trusted domains for a given origin. You will therefore need an instance of memcached
+running locally. Pebbles::Cors will look for a global variable called `$memcached`, or instantiate a new instance of Dalli::Client if that variable does not exists.
+
 ## Installation
 
 Add this line to your application's Gemfile:

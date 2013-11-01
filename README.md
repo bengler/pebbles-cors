@@ -75,4 +75,4 @@ end
 
     {"chunky":"bacon"}
 
-Note: The server will processes the request as usual, the only difference is the lack of `Access-Control-*` headers and is effectively the same as issuing the same request *without* the Origin header. It is now up to the browser to abort the request coming from this untrusted domain.
+Note: The server will processes the request as usual, the only difference is the lack of `Access-Control-*` headers and is effectively the same as issuing the same request *without* the Origin header. It is now up to the browser to abort the request originating from this untrusted domain.

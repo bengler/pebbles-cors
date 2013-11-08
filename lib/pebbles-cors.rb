@@ -10,7 +10,7 @@ module Pebbles
     def initialize(app, &blk)
       @app = app
       @trusted_domain_fetcher = blk
-      @cache_ttl = 60*15 # in seconds
+      @cache_ttl = 60*5 # in seconds
     end
 
     def trusted_origin?(request)

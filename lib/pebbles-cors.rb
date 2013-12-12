@@ -38,8 +38,8 @@ module Pebbles
         if allowed
           cors_headers['Content-Type'] = 'text/plain'
           cors_headers['Access-Control-Max-Age'] = (60*60).to_s # Tell the browser it can cache the result for this long (in seconds)
-          cors_headers['Access-Control-Allow-Headers'] = request.request_headers if request.request_headers
-          cors_headers['Access-Control-Allow-Methods'] = request.request_methods if request.request_methods
+          cors_headers['Access-Control-Allow-Headers'] = request.access_control_request_headers if request.access_control_request_headers
+          cors_headers['Access-Control-Allow-Methods'] = request.access_control_request_method if request.access_control_request_method
         end
         # Always return empty body when responding to preflighted requests
         [200, cors_headers, []]
@@ -101,12 +101,12 @@ module Pebbles
       cors? && options?
     end
 
-    def request_headers
+    def access_control_request_headers
       env['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']
     end
 
-    def request_methods
-      env['HTTP_ACCESS_CONTROL_REQUEST_METHODS']
+    def access_control_request_method
+      env['HTTP_ACCESS_CONTROL_REQUEST_METHOD']
     end
 
   end

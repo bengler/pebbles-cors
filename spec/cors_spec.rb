@@ -93,12 +93,12 @@ describe Pebbles::Cors do
         [200, {}, protected_data]
       end
 
-      request_methods = "POST, PUT, DELETE"
+      request_method = "PUT"
       request_headers = "X-Some-Header"
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                           :method => "OPTIONS",
                                           'HTTP_ORIGIN' => "http://client-domain.com",
-                                          'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
+                                          'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => request_method,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
       Pebblebed::Http.should_receive(:get).once.and_return trusted_response
@@ -110,7 +110,7 @@ describe Pebbles::Cors do
 
       headers['Access-Control-Allow-Credentials'].should be_true
       headers.should include 'Access-Control-Max-Age'
-      headers['Access-Control-Allow-Methods'].should eq request_methods
+      headers['Access-Control-Allow-Methods'].should eq request_method
       headers['Access-Control-Allow-Headers'].should eq request_headers
       body.should be_empty
     end
@@ -121,12 +121,12 @@ describe Pebbles::Cors do
         [200, {}, protected_data]
       end
 
-      request_methods = "POST, PUT, DELETE"
+      request_method = "DELETE"
       request_headers = "X-Some-Header"
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                           :method => "OPTIONS",
                                           'HTTP_ORIGIN' => "http://disallowed-domain.com",
-                                          'HTTP_ACCESS_CONTROL_REQUEST_METHODS' => request_methods,
+                                          'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => request_method,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
       Pebblebed::Http.should_receive(:get).once.and_return distrusted_response

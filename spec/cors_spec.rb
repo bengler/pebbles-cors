@@ -45,6 +45,8 @@ describe Pebbles::Cors do
       status, headers, body = Pebbles::Cors.new(app).call(request)
 
       headers['Access-Control-Allow-Origin'].should eq "http://client-domain.com"
+      headers['Vary'].should eq 'Origin'
+      
       body.should eq protected_data
     end
 
@@ -111,6 +113,7 @@ describe Pebbles::Cors do
       headers['Access-Control-Allow-Credentials'].should be_true
       headers.should include 'Access-Control-Max-Age'
       headers['Access-Control-Allow-Methods'].should eq request_method
+      headers['Vary'].should eq 'Origin'
       headers['Access-Control-Allow-Headers'].should eq request_headers
       body.should be_empty
     end

@@ -28,11 +28,12 @@ module Pebbles
 
       allowed = trusted_origin?(request)
 
-      cors_headers = {}
+      cors_headers = {'Vary' => 'Origin'}
       if allowed
         cors_headers['Access-Control-Allow-Origin'] = request.origin
         cors_headers['Access-Control-Expose-Headers'] = ""
         cors_headers['Access-Control-Allow-Credentials'] = 'true'
+        cors_headers['Vary'] = 'Origin'
       end
       if request.preflight?
         if allowed

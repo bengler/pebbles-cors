@@ -9,7 +9,7 @@ module Pebbles
 
     def initialize(app, &blk)
       @app = app
-      @trusted_domain_fetcher = blk
+      @allows_origin_blk = blk
       @cache_ttl = 60*5 # in seconds
     end
 
@@ -31,7 +31,7 @@ module Pebbles
       cors_headers = {'Vary' => 'Origin'}
       if allowed
         cors_headers['Access-Control-Allow-Origin'] = request.origin
-        cors_headers['Access-Control-Expose-Headers'] = ""
+        cors_headers['Access-Control-Expose-Headers'] = ''
         cors_headers['Access-Control-Allow-Credentials'] = 'true'
         cors_headers['Vary'] = 'Origin'
       end
@@ -57,15 +57,15 @@ module Pebbles
     end
 
     def host_trusts_origin_host?(host, origin_host)
-      if @trusted_domain_fetcher
-        @trusted_domain_fetcher.call(host, origin_host)
-      else
-        begin
-          checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
-          checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
-        rescue Exception
-          false
-        end
+      if @allows_origin_blk
+        return @allows_origin_blk.call(host, origin_host) == true
+      end
+
+      begin
+        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
+        checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
+      rescue Exception
+        false
       end
     end
 

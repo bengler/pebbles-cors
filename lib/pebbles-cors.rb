@@ -4,6 +4,11 @@ require "dalli"
 
 module Pebbles
 
+  # gaargh! pebblebed will fail unless needed services are declared up front
+  Pebblebed.config do
+    service :checkpoint
+  end
+
   class Cors
 
     attr_accessor :cache_ttl

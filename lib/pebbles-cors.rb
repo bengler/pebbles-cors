@@ -3,6 +3,7 @@ require "pebblebed"
 require "dalli"
 
 module Pebbles
+
   class Cors
 
     attr_accessor :cache_ttl
@@ -57,14 +58,14 @@ module Pebbles
     end
 
     def host_trusts_origin_host?(host, origin_host)
-      if @allows_origin_blk
-        return @allows_origin_blk.call(host, origin_host) == true
-      end
+    
+      return @allows_origin_blk.call(host, origin_host) == true if @allows_origin_blk
 
+      checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
       begin
-        checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
         checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
-      rescue Exception
+      rescue Pebblebed::HttpNotFoundError
+        # If we get here, either `host` or `origin_host` is not found in checkpoint 
         false
       end
     end

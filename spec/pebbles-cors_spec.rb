@@ -40,14 +40,14 @@ describe Pebbles::Cors do
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                           'HTTP_ORIGIN' => "http://client-domain.com"
 
-      Pebblebed::Http.should_receive(:get).once.and_return trusted_response
+      expect(Pebblebed::Http).to receive(:get).once.and_return trusted_response
 
       _, headers, body = Pebbles::Cors.new(app).call(request)
 
-      headers['Access-Control-Allow-Origin'].should eq "http://client-domain.com"
-      headers['Vary'].should eq 'Origin'
-      
-      body.should eq protected_data
+      expect(headers['Access-Control-Allow-Origin']).to eq "http://client-domain.com"
+      expect(headers['Vary']).to eq 'Origin'
+
+      expect(body).to eq protected_data
     end
 
     it 'Ignores requests without "Origin" header and just moves along' do
@@ -58,16 +58,16 @@ describe Pebbles::Cors do
 
       request = Rack::MockRequest.env_for("http://host-domain.dev/some/resource")
 
-      Pebblebed::Http.should_not_receive(:get)
+      expect(Pebblebed::Http).to_not receive(:get)
 
       Pebbles::Cors.new(app).call(request)
 
       _, headers, body = Pebbles::Cors.new(app).call(request)
-      headers.should_not include 'Access-Control-Allow-Origin'
-      body.should eq protected_data
+      expect(headers).to_not include 'Access-Control-Allow-Origin'
+      expect(body).to eq protected_data
     end
 
-    it 'Will not trust an origin if checkpoint returns an error' do
+    it 'Will not trust an origin if checkpoint returns a 404' do
 
       app = lambda do |env|
         [200, {}, protected_data]
@@ -76,18 +76,34 @@ describe Pebbles::Cors do
       request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
                                             'HTTP_ORIGIN' => "http://client-domain.com"
 
-      Pebblebed::Http.should_receive(:get).once.and_raise
+      expect(Pebblebed::Http).to receive(:get).once.and_raise(Pebblebed::HttpNotFoundError.new("Something was not found"))
 
       _, headers, body = Pebbles::Cors.new(app).call(request)
 
-      headers.should_not include 'Access-Control-Allow-Origin'
-      headers.should_not include 'Access-Control-Allow-Credentials'
-      headers.should_not include 'Access-Control-Max-Age'
-      headers.should_not include 'Access-Control-Allow-Methods'
-      headers.should_not include 'Access-Control-Allow-Headers'
+      expect(headers).to_not include 'Access-Control-Allow-Origin'
+      expect(headers).to_not include 'Access-Control-Allow-Credentials'
+      expect(headers).to_not include 'Access-Control-Max-Age'
+      expect(headers).to_not include 'Access-Control-Allow-Methods'
+      expect(headers).to_not include 'Access-Control-Allow-Headers'
 
       # This is expected. The browser will protect the data for us
-      body.should eq protected_data
+      expect(body).to eq protected_data
+    end
+
+    it 'Will propagate other errors as usual and not add CORS headers if something unexpected happens' do
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                            'HTTP_ORIGIN' => "http://client-domain.com"
+
+      error = RuntimeError.new("Unexpected funky error")
+
+      expect(Pebblebed::Http).to receive(:get).once.and_raise(error)      
+      expect(-> { Pebbles::Cors.new(app).call(request)} ).to raise_error(error)
+
     end
 
     it 'Handles a preflight request' do
@@ -104,19 +120,19 @@ describe Pebbles::Cors do
                                           'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => request_method,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
-      Pebblebed::Http.should_receive(:get).once.and_return trusted_response
+      expect(Pebblebed::Http).to receive(:get).once.and_return trusted_response
 
       # Will not call the app on preflighted requests (as it would most likely give 404 anyways)
-      app.should_not_receive :call
+      expect(app).to_not receive :call
 
       _, headers, body = Pebbles::Cors.new(app).call(request)
 
-      headers['Access-Control-Allow-Credentials'].should be_true
-      headers.should include 'Access-Control-Max-Age'
-      headers['Access-Control-Allow-Methods'].should eq request_method
-      headers['Vary'].should eq 'Origin'
-      headers['Access-Control-Allow-Headers'].should eq request_headers
-      body.should be_empty
+      expect(headers).to include 'Access-Control-Max-Age'
+      expect(headers['Access-Control-Allow-Credentials']).to eq 'true'
+      expect(headers['Access-Control-Allow-Methods']).to eq request_method
+      expect(headers['Vary']).to eq 'Origin'
+      expect(headers['Access-Control-Allow-Headers']).to eq request_headers
+      expect(body).to be_empty
     end
 
     it 'It will not redirect the request to the app if its a preflight from a denied origin' do
@@ -133,18 +149,18 @@ describe Pebbles::Cors do
                                           'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => request_method,
                                           'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => request_headers
 
-      Pebblebed::Http.should_receive(:get).once.and_return distrusted_response
+      expect(Pebblebed::Http).to receive(:get).once.and_return distrusted_response
 
-      app.should_not_receive :call
+      expect(app).to_not receive :call
 
       _, headers, body = Pebbles::Cors.new(app).call(request)
 
-      headers.should_not include 'Access-Control-Allow-Origin'
-      headers.should_not include 'Access-Control-Allow-Credentials'
-      headers.should_not include 'Access-Control-Max-Age'
-      headers.should_not include 'Access-Control-Allow-Methods'
-      headers.should_not include 'Access-Control-Allow-Headers'
-      body.should be_empty
+      expect(headers).to_not include 'Access-Control-Allow-Origin'
+      expect(headers).to_not include 'Access-Control-Allow-Credentials'
+      expect(headers).to_not include 'Access-Control-Max-Age'
+      expect(headers).to_not include 'Access-Control-Allow-Methods'
+      expect(headers).to_not include 'Access-Control-Allow-Headers'
+      expect(body).to be_empty
     end
 
     describe 'optional block for checking whether an origin is trusted by a domain' do
@@ -162,8 +178,8 @@ describe Pebbles::Cors do
         end
 
         _, headers, body = m.call(request)
-        headers['Access-Control-Allow-Origin'].should eq "http://client-domain.com"
-        body.should eq protected_data
+        expect(headers['Access-Control-Allow-Origin']).to eq "http://client-domain.com"
+        expect(body).to eq protected_data
       end
 
       it 'disallows if the block returns false' do
@@ -180,11 +196,11 @@ describe Pebbles::Cors do
         end
 
         _, headers, _ = m.call(request)
-        headers.should_not include 'Access-Control-Allow-Origin'
-        headers.should_not include 'Access-Control-Allow-Credentials'
-        headers.should_not include 'Access-Control-Max-Age'
-        headers.should_not include 'Access-Control-Allow-Methods'
-        headers.should_not include 'Access-Control-Allow-Headers'
+        expect(headers).to_not include 'Access-Control-Allow-Origin'
+        expect(headers).to_not include 'Access-Control-Allow-Credentials'
+        expect(headers).to_not include 'Access-Control-Max-Age'
+        expect(headers).to_not include 'Access-Control-Allow-Methods'
+        expect(headers).to_not include 'Access-Control-Allow-Headers'
       end
 
       it 'disallows if the block returns a value' do
@@ -201,10 +217,10 @@ describe Pebbles::Cors do
         end
 
         _, headers, _ = m.call(request)
-        headers.should_not include 'Access-Control-Allow-Credentials'
-        headers.should_not include 'Access-Control-Max-Age'
-        headers.should_not include 'Access-Control-Allow-Methods'
-        headers.should_not include 'Access-Control-Allow-Headers'
+        expect(headers).to_not include 'Access-Control-Allow-Credentials'
+        expect(headers).to_not include 'Access-Control-Max-Age'
+        expect(headers).to_not include 'Access-Control-Allow-Methods'
+        expect(headers).to_not include 'Access-Control-Allow-Headers'
       end
 
     end
@@ -222,8 +238,8 @@ describe Pebbles::Cors do
       end
 
       status, headers, body = m.call(request)
-      headers['Access-Control-Allow-Origin'].should eq "http://localhost:8080"
-      body.should eq protected_data
+      expect(headers['Access-Control-Allow-Origin']).to eq "http://localhost:8080"
+      expect(body).to eq protected_data
     end
 
   end

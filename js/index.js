@@ -50,10 +50,12 @@ function pebblesCors(checkFunction, options) {
         headers['Access-Control-Allow-Methods'] = req.get('Access-Control-Request-Method');
       }
 
-      return res.type("text/plain").status(200).send('');
+      res.set(headers);
+      return res.type("text/plain").status(200).end('');
     }
 
     res.set(headers);
+
     return next();
   }
 

@@ -91,10 +91,10 @@ function pebblesCors(checkFunction, options) {
     var checkpoint = createCheckpoint(req.protocol+'://'+requestHost);
     return checkpoint.get("/domains/"+requestHost+"/allows/"+originHost)
       .then(function(body) {
-        return body.allows;
+        return body.allowed;
       })
       .catch(function(error) {
-        if (error.statusCode === 404) {
+        if (error.status === 404) {
           return false;
         }
       });

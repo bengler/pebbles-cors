@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/bengler/pebbles-cors",
   "dependencies": {
+    "maximist": "^1.0.0",
     "pebbles-client": "git://github.com/bengler/pebbles-client.js#1.x"
   },
   "devDependencies": {

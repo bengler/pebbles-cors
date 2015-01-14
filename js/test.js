@@ -12,7 +12,7 @@ var pebblesCors = proxyquire("./index", {
         // example endpoint /domains/<requestHost>/allows/<originHost>
         var [, , requestHost, , originHost] = endpoint.split("/");
         var allowed = TRUSTS_ORIGINS[requestHost] && TRUSTS_ORIGINS[requestHost].indexOf(originHost) > -1;
-        return Promise.resolve({allowed: allowed})
+        return Promise.resolve({body: {allowed: allowed}})
       }
     }
   }

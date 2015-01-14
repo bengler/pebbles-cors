@@ -90,8 +90,8 @@ function pebblesCors(checkFunction, options) {
     // Check if the given origin host is allowed to do the request (or a subdomain of a trusted domain)
     var checkpoint = createCheckpoint(req.protocol+'://'+requestHost);
     return checkpoint.get("/domains/"+requestHost+"/allows/"+originHost)
-      .then(function(body) {
-        return body.allowed;
+      .then(function(response) {
+        return response.body.allowed;
       })
       .catch(function(error) {
         if (error.status === 404) {

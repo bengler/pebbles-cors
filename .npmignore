@@ -1,0 +1,9 @@
+Gemfile*
+*.gemspec
+Rakefile
+.rspec
+.gitignore
+spec/*
+lib/*
+coverage/*
+js/test.js

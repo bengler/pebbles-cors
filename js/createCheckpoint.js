@@ -1,4 +1,4 @@
-var Connector = require("pebbles-client").Connector;
+var Connector = require("@bengler/pebbles-client").Connector;
 
 module.exports = createCheckpoint;
 

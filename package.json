@@ -1,10 +1,10 @@
 {
-  "name": "pebbles-cors",
+  "name": "@bengler/pebbles-cors",
   "version": "0.0.1",
   "description": "Express middleware for [CORS](http://www.w3.org/TR/cors/) handling in Pebbles.",
   "main": "./js/index.js",
   "scripts": {
-    "test": "mocha -r 6to5/register js/test"
+    "test": "mocha -r babel-core/register js/test"
   },
   "repository": {
     "type": "git",
@@ -17,11 +17,11 @@
   },
   "homepage": "https://github.com/bengler/pebbles-cors",
   "dependencies": {
-    "maximist": "^1.0.0",
-    "pebbles-client": "git://github.com/bengler/pebbles-client.js#1.x"
+    "@bengler/pebbles-client": "^1.0.23"
   },
   "devDependencies": {
-    "6to5": "^2.9.3",
+    "babel": "^4.5.5",
+    "babel-core": "^4.5.5",
     "express": "^4.10.7",
     "methods": "^1.1.1",
     "mocha": "^2.1.0",

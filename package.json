@@ -1,6 +1,6 @@
 {
   "name": "@bengler/pebbles-cors",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Express middleware for [CORS](http://www.w3.org/TR/cors/) handling in Pebbles.",
   "main": "./js/index.js",
   "scripts": {

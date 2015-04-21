@@ -5,7 +5,7 @@ module.exports = createCheckpoint;
 function createCheckpoint(baseUrl) {
   var connector = new Connector({
     baseUrl: baseUrl,
-    clientClasses: require("pebbles-client/clients")
+    clientClasses: require("@bengler/pebbles-client/clients")
   });
 
   connector.use({

@@ -63,14 +63,14 @@ module Pebbles
     end
 
     def host_trusts_origin_host?(host, origin_host)
-    
+
       return @allows_origin_blk.call(host, origin_host) == true if @allows_origin_blk
 
       checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
       begin
         checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
       rescue Pebblebed::HttpNotFoundError
-        # If we get here, either `host` or `origin_host` is not found in checkpoint 
+        # If we get here, either `host` or `origin_host` is not found in checkpoint
         false
       end
     end
@@ -95,7 +95,11 @@ module Pebbles
 
     # The host part of the origin header (excluding port)
     def origin_host
-      URI.parse(origin).host
+      begin
+        URI.parse(URI.encode(origin.strip)).host
+      rescue URI::InvalidURIError
+        origin
+      end
     end
 
     # Is it a CORS request at all?

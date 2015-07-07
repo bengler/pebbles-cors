@@ -90,6 +90,20 @@ describe Pebbles::Cors do
       expect(body).to eq protected_data
     end
 
+    it 'Will handle, but not trust invalid origins like "about:"' do
+
+      app = lambda do |env|
+        [200, {}, protected_data]
+      end
+
+      request = Rack::MockRequest.env_for "http://server-domain.dev/some/resource",
+                                            'HTTP_ORIGIN' => "about:"
+
+      expect(Pebblebed::Http).to receive(:get).once.and_raise(Pebblebed::HttpNotFoundError.new("Something was not found"))
+      _, headers, body = Pebbles::Cors.new(app).call(request)
+
+    end
+
     it 'Will propagate other errors as usual and not add CORS headers if something unexpected happens' do
 
       app = lambda do |env|
@@ -101,7 +115,7 @@ describe Pebbles::Cors do
 
       error = RuntimeError.new("Unexpected funky error")
 
-      expect(Pebblebed::Http).to receive(:get).once.and_raise(error)      
+      expect(Pebblebed::Http).to receive(:get).once.and_raise(error)
       expect(-> { Pebbles::Cors.new(app).call(request)} ).to raise_error(error)
 
     end

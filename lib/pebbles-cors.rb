@@ -1,3 +1,4 @@
+require 'rack'
 require "pebbles-cors/version"
 require "pebblebed"
 require "dalli"

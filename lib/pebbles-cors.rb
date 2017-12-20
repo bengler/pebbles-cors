@@ -31,6 +31,12 @@ module Pebbles
     def call(env)
       request = CorsRequest.new(env)
 
+      connector_options = {
+        :host => request.host,
+        :scheme => request.scheme
+      }
+      @checkpoint ||= Pebblebed::Connector.new(nil, connector_options)['checkpoint']
+
       return @app.call(env) unless request.cors?
 
       allowed = trusted_origin?(request)
@@ -67,9 +73,8 @@ module Pebbles
 
       return @allows_origin_blk.call(host, origin_host) == true if @allows_origin_blk
 
-      checkpoint = Pebblebed::Connector.new(nil, :host => host)['checkpoint']
       begin
-        checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
+        @checkpoint.get("/domains/#{host}/allows/#{origin_host}").allowed == true
       rescue Pebblebed::HttpNotFoundError
         # If we get here, either `host` or `origin_host` is not found in checkpoint
         false

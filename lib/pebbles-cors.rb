@@ -32,8 +32,8 @@ module Pebbles
       request = CorsRequest.new(env)
 
       connector_options = {
-        :host => request.host,
-        :scheme => request.scheme
+        :host => env['HTTP_X_FORWARDED_HOST'] || request.host,
+        :scheme => env['HTTP_X_FORWARDED_PROTOCOL'] || request.scheme
       }
       @checkpoint ||= Pebblebed::Connector.new(nil, connector_options)['checkpoint']
 
